@@ -634,3 +634,115 @@ def generate_engine_keys_to_victory(base_team, opponent) -> list[str]:
         keys.append(get_key_from_base_team_edge(edge))
 
     return keys
+
+def build_matchup_evidence_row(
+    area: str,
+    side: str,
+    matchup_type: str,
+    score: float,
+    team: str,
+    metric_abbreviation: str,
+    percentile: float,
+    metric_role: str,
+) -> dict:
+    """
+    Build one supporting-stat row for a matchup area
+    """
+    return {
+        "area": area,
+        "side": side,
+        "matchup_type": matchup_type,
+        "score": score,
+        "team": team,
+        "metric_display_name": METRIC_DISPLAY_NAMES[metric_abbreviation],
+        "metric_abbreviation": metric_abbreviation,
+        "percentile": percentile,
+        "metric_role": metric_role,
+    }
+
+
+def get_matchup_evidence_rows(
+    base_team,
+    opponent,
+    pressure_limit: int = 3,
+    edge_limit: int = 3,
+) -> list[dict]:
+    """
+    Return supporting-stat rows for the top pressure and edge areas
+
+    Each matchup area creates two rows:
+    one for the attacking team metric and one for the resistance metric
+    """
+    rows = []
+
+    top_pressures = get_top_opponent_pressures(
+        base_team,
+        opponent,
+        limit=pressure_limit,
+    )
+
+    for pressure in top_pressures:
+        matchup_type = get_pressure_matchup_type(pressure)
+
+        rows.append(
+            build_matchup_evidence_row(
+                area=pressure["name"],
+                side="Opponent pressure",
+                matchup_type=matchup_type,
+                score=pressure["pressure_score"],
+                team=pressure["opponent"],
+                metric_abbreviation=pressure["opponent_metric"],
+                percentile=pressure["opponent_strength"],
+                metric_role="Attack",
+            )
+        )
+
+        rows.append(
+            build_matchup_evidence_row(
+                area=pressure["name"],
+                side="Opponent pressure",
+                matchup_type=matchup_type,
+                score=pressure["pressure_score"],
+                team=pressure["base_team"],
+                metric_abbreviation=pressure["base_metric"],
+                percentile=pressure["base_resistance"],
+                metric_role="Resistance",
+            )
+        )
+
+    top_edges = get_top_base_team_edges(
+        base_team,
+        opponent,
+        limit=edge_limit,
+    )
+
+    for edge in top_edges:
+        matchup_type = get_edge_matchup_type(edge)
+
+        rows.append(
+            build_matchup_evidence_row(
+                area=edge["name"],
+                side="Base team edge",
+                matchup_type=matchup_type,
+                score=edge["edge_score"],
+                team=edge["base_team"],
+                metric_abbreviation=edge["base_metric"],
+                percentile=edge["base_strength"],
+                metric_role="Attack",
+            )
+        )
+
+        rows.append(
+            build_matchup_evidence_row(
+                area=edge["name"],
+                side="Base team edge",
+                matchup_type=matchup_type,
+                score=edge["edge_score"],
+                team=edge["opponent"],
+                metric_abbreviation=edge["opponent_metric"],
+                percentile=edge["opponent_resistance"],
+                metric_role="Resistance",
+            )
+        )
+
+    return rows

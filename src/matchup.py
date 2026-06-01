@@ -10,6 +10,7 @@ from matchup_engine import (
     generate_engine_keys_to_victory,
     generate_matchup_summary,
     identify_team_archetype,
+    get_matchup_evidence_rows,
 )
 from scouting import generate_team_report
 
@@ -191,6 +192,7 @@ def generate_matchup_report(base_team, opponent) -> dict:
         "opponent_dangers": get_opponent_dangers(base_team, opponent),
         "matchup_swing_factors": get_matchup_swing_factors(base_team, opponent),
         "keys_to_victory": generate_engine_keys_to_victory(base_team, opponent),
+        "supporting_stats": get_matchup_evidence_rows(base_team, opponent),
     }
 
     return report
