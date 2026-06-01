@@ -228,7 +228,7 @@ def format_pressure_score(score: dict) -> str:
     base_metric_name = METRIC_DISPLAY_NAMES[score["base_metric"]]
 
     return (
-        f"{score['name']}: {score['pressure_score']}/100 ({get_pressure_matchup_type(score)}) — "
+        f"{score['name']}: {score['pressure_score']}/100 ({get_pressure_matchup_type(score)}). "
         f"{score['opponent']}'s {opponent_metric_name} attacks "
         f"{score['base_team']}'s {base_metric_name} profile. "
         f"{score['opponent']} {score['opponent_metric']} percentile: {score['opponent_strength']}; "
@@ -315,7 +315,7 @@ def format_edge_score(score: dict) -> str:
     opponent_metric_name = METRIC_DISPLAY_NAMES[score["opponent_metric"]]
 
     return (
-        f"{score['name']}: {score['edge_score']}/100 ({get_edge_matchup_type(score)}) — "
+        f"{score['name']}: {score['edge_score']}/100 ({get_edge_matchup_type(score)}). "
         f"{score['base_team']}'s {base_metric_name} attacks "
         f"{score['opponent']}'s {opponent_metric_name} profile. "
         f"{score['base_team']} {score['base_metric']} percentile: {score['base_strength']}; "
