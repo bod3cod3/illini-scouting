@@ -529,3 +529,108 @@ def score_identity_axes(team) -> list[dict]:
     )
 
     return axes
+
+def get_key_from_opponent_pressure(score: dict) -> str:
+    """
+    Create one key to victory from an opponent pressure score
+    """
+    base_team = score["base_team"]
+    opponent = score["opponent"]
+    matchup_type = get_pressure_matchup_type(score).lower()
+
+    if score["name"] == "Defensive glass pressure":
+        return (
+            f"Finish defensive possessions: {opponent}'s offensive rebounding is a "
+            f"{matchup_type}, so {base_team} needs five-man box-outs before leaking out."
+        )
+
+    if score["name"] == "Opponent three-point volume pressure":
+        return (
+            f"Control the arc: {opponent}'s three-point volume is a {matchup_type}, "
+            f"so {base_team} needs disciplined closeouts without overhelping."
+        )
+
+    if score["name"] == "Opponent shooting efficiency pressure":
+        return (
+            f"Make first shots difficult: {opponent}'s shooting efficiency is a "
+            f"{matchup_type}, so {base_team} cannot give up clean early-clock looks."
+        )
+
+    if score["name"] == "Opponent turnover pressure":
+        return (
+            f"Protect possessions: {opponent}'s turnover creation is a {matchup_type}, "
+            f"so {base_team} needs strong spacing, simple outlets, and limited live-ball mistakes."
+        )
+
+    if score["name"] == "Opponent free throw pressure":
+        return (
+            f"Defend without fouling: {opponent}'s free throw pressure is a "
+            f"{matchup_type}, so {base_team} needs verticality and disciplined help rotations."
+        )
+
+    return (
+        f"Manage {score['name'].lower()}: {base_team} needs to limit the matchup area "
+        f"where {opponent} creates the most pressure."
+    )
+
+
+def get_key_from_base_team_edge(score: dict) -> str:
+    """
+    Create one key to victory from a base team edge score
+    """
+    base_team = score["base_team"]
+    opponent = score["opponent"]
+    matchup_type = get_edge_matchup_type(score).lower()
+
+    if score["name"] == "Offensive glass edge":
+        return (
+            f"Attack the offensive glass: {base_team}'s offensive rebounding is a "
+            f"{matchup_type}, so second-chance points can be a major source of value."
+        )
+
+    if score["name"] == "Three-point volume edge":
+        return (
+            f"Lean into quality threes: {base_team}'s three-point volume is a "
+            f"{matchup_type}, so clean catch-and-shoot looks should be emphasized."
+        )
+
+    if score["name"] == "Shooting efficiency edge":
+        return (
+            f"Create efficient looks: {base_team}'s shooting efficiency is a "
+            f"{matchup_type}, so pace, spacing, and ball movement should drive the offense."
+        )
+
+    if score["name"] == "Ball security edge":
+        return (
+            f"Make {opponent} defend full possessions: {base_team}'s ball security is a "
+            f"{matchup_type}, so avoiding empty possessions can tilt the possession math."
+        )
+
+    if score["name"] == "Free throw pressure edge":
+        return (
+            f"Pressure the rim: {base_team}'s free throw pressure is a "
+            f"{matchup_type}, so attacking closeouts and drawing contact can create efficient points."
+        )
+
+    return (
+        f"Use {score['name'].lower()}: {base_team} should lean into the matchup area "
+        f"where it creates the clearest edge."
+    )
+
+
+def generate_engine_keys_to_victory(base_team, opponent) -> list[str]:
+    """
+    Generate keys to victory from the top pressure and edge scores
+    """
+    keys = []
+
+    top_pressures = get_top_opponent_pressures(base_team, opponent, limit=2)
+    top_edges = get_top_base_team_edges(base_team, opponent, limit=2)
+
+    for pressure in top_pressures:
+        keys.append(get_key_from_opponent_pressure(pressure))
+
+    for edge in top_edges:
+        keys.append(get_key_from_base_team_edge(edge))
+
+    return keys

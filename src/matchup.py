@@ -7,6 +7,7 @@ from metrics import add_percentile_columns
 from matchup_engine import (
     format_top_opponent_pressures,
     format_top_base_team_edges,
+    generate_engine_keys_to_victory,
     generate_matchup_summary,
     identify_team_archetype,
 )
@@ -189,7 +190,7 @@ def generate_matchup_report(base_team, opponent) -> dict:
         "base_team_advantages": get_base_team_advantages(base_team, opponent),
         "opponent_dangers": get_opponent_dangers(base_team, opponent),
         "matchup_swing_factors": get_matchup_swing_factors(base_team, opponent),
-        "keys_to_victory": generate_keys_to_victory(base_team, opponent),
+        "keys_to_victory": generate_engine_keys_to_victory(base_team, opponent),
     }
 
     return report
