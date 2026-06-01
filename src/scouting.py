@@ -101,27 +101,27 @@ def explain_strength(strength: str) -> str:
     Add basketball context to a strength label
     """
     if "shooting efficiency" in strength:
-        return f"{strength} — converts possessions efficiently, especially when able to generate clean looks."
+        return f"{strength}: converts possessions efficiently, especially when able to generate clean looks."
     if "offensive rebounding" in strength:
-        return f"{strength} — creates extra possessions and punishes opponents that fail to finish defensive possessions."
+        return f"{strength}: creates extra possessions and punishes opponents that fail to finish defensive possessions."
 
     if "ball security" in strength:
-        return f"{strength} — limits turnovers and reduces transition chances for opponents."
+        return f"{strength}: limits turnovers and reduces transition chances for opponents."
 
     if "free throw generation" in strength:
-        return f"{strength} — puts pressure on defenses and can create foul trouble."
+        return f"{strength}: puts pressure on defenses and can create foul trouble."
 
     if "shot defense" in strength:
-        return f"{strength} — holds opponents to difficult or inefficient looks."
+        return f"{strength}: holds opponents to difficult or inefficient looks."
 
     if "foul avoidance" in strength:
-        return f"{strength} — keeps opponents off the free throw line and avoids cheap points."
+        return f"{strength}: keeps opponents off the free throw line and avoids cheap points."
 
     if "defensive turnover creation" in strength:
-        return f"{strength} — creates extra possessions through pressure and disruption."
+        return f"{strength}: creates extra possessions through pressure and disruption."
 
     if "three-point volume" in strength:
-        return f"{strength} — stretches defenses and can create scoring runs."
+        return f"{strength}: stretches defenses and can create scoring runs."
 
     return strength
 
@@ -130,28 +130,28 @@ def explain_weakness(weakness: str) -> str:
     Add basketball context to a weakness label
     """
     if "inefficient shooting offense" in weakness:
-        return f"{weakness} — may struggle to score if forced into half-court possessions or contested shots."
+        return f"{weakness}: may struggle to score if forced into half-court possessions or contested shots."
 
     if "weak offensive rebounding" in weakness:
-        return f"{weakness} — misses are more likely to end possessions."
+        return f"{weakness}: misses are more likely to end possessions."
 
     if "turnover-prone offense" in weakness:
-        return f"{weakness} — pressure can create extra possessions and transition opportunities."
+        return f"{weakness}: pressure can create extra possessions and transition opportunities."
 
     if "does not get to the free throw line often" in weakness:
-        return f"{weakness} — relies more heavily on made field goals rather than foul pressure."
+        return f"{weakness}: relies more heavily on made field goals rather than foul pressure."
 
     if "allows efficient opponent shooting" in weakness:
-        return f"{weakness} — opponents can generate or convert quality looks."
+        return f"{weakness}: opponents can generate or convert quality looks."
 
     if "fouls too often defensively" in weakness:
-        return f"{weakness} — opponents can create cheap points and put key defenders in foul trouble."
+        return f"{weakness}: opponents can create cheap points and put key defenders in foul trouble."
 
     if "does not force many turnovers" in weakness:
-        return f"{weakness} — opponents can usually initiate offense without heavy disruption."
+        return f"{weakness}: opponents can usually initiate offense without heavy disruption."
 
     if "allows a high volume of opponent three-point attempts" in weakness:
-        return f"{weakness} — closeout discipline and help rotations are important."
+        return f"{weakness}: closeout discipline and help rotations are important."
 
     return weakness
 
