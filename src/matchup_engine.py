@@ -69,6 +69,82 @@ METRIC_DISPLAY_NAMES = {
     "3P Rate Def": "three-point volume allowed",
 }
 
+TEAM_STYLE_SIGNALS = [
+    {
+        "name": "Efficient scoring",
+        "metric": "eFG%",
+        "description": "converts possessions efficiently"
+    },
+    {
+        "name": "Offensive glass pressure",
+        "metric": "OR%",
+        "description": "creates extra possessions through offensive rebounding"
+    },
+    {
+        "name": "Ball security",
+        "metric": "TO%",
+        "description": "protects possessions and limits live-ball turnover risk"
+    },
+    {
+        "name": "Free throw pressure",
+        "metric": "FTR",
+        "description": "puts pressure on the rim and gets to the free throw line"
+    },
+    {
+        "name": "Shot defense",
+        "metric": "eFG% Def",
+        "description": "forces opponents into inefficient shooting"
+    },
+    {
+        "name": "Foul avoidance",
+        "metric": "FTR Def",
+        "description": "defends without sending opponents to the free throw line"
+    },
+    {
+        "name": "Defensive pressure",
+        "metric": "TO% Def.",
+        "description": "creates turnovers through pressure and disruption"
+    },
+    {
+        "name": "Three-point volume",
+        "metric": "3P Rate",
+        "description": "takes a high share of attempts from three"
+    },
+]
+
+IDENTITY_AXES = [
+    {
+        "name": "Offensive firepower",
+        "metrics": ["eFG%", "OR%", "TO%", "3P Rate"],
+        "description": "scores efficiently, protects possessions, creates second chances, and stretches defenses"
+    },
+    {
+        "name": "Possession control",
+        "metrics": ["OR%", "TO%", "TO% Def."],
+        "description": "wins the possession battle through rebounding, ball security, and defensive disruption"
+    },
+    {
+        "name": "Defensive disruption",
+        "metrics": ["TO% Def.", "eFG% Def"],
+        "description": "pressures opponents into turnovers and difficult shots"
+    },
+    {
+        "name": "Defensive discipline",
+        "metrics": ["eFG% Def", "FTR Def"],
+        "description": "forces inefficient shots without fouling"
+    },
+    {
+        "name": "Perimeter volume",
+        "metrics": ["3P Rate", "3P%"],
+        "description": "leans on three-point volume and perimeter shotmaking"
+    },
+    {
+        "name": "Paint and free throw pressure",
+        "metrics": ["FTR", "OR%"],
+        "description": "puts pressure on the rim, free throw line, and offensive glass"
+    },
+]
+
 def calculate_pressure_score(opponent_strength: float, base_resistance: float) -> float:
     """
     Calculate how much pressure an opponent puts on the base team in one matchup area
@@ -152,7 +228,7 @@ def format_pressure_score(score: dict) -> str:
     base_metric_name = METRIC_DISPLAY_NAMES[score["base_metric"]]
 
     return (
-        f"{score['name']}: {score['pressure_score']}/100 ({get_score_confidence(score['pressure_score'])}) — "
+        f"{score['name']}: {score['pressure_score']}/100 ({get_pressure_matchup_type(score)}) — "
         f"{score['opponent']}'s {opponent_metric_name} attacks "
         f"{score['base_team']}'s {base_metric_name} profile. "
         f"{score['opponent']} {score['opponent_metric']} percentile: {score['opponent_strength']}; "
@@ -239,7 +315,7 @@ def format_edge_score(score: dict) -> str:
     opponent_metric_name = METRIC_DISPLAY_NAMES[score["opponent_metric"]]
 
     return (
-        f"{score['name']}: {score['edge_score']}/100 ({get_score_confidence(score['edge_score'])}) — "
+        f"{score['name']}: {score['edge_score']}/100 ({get_edge_matchup_type(score)}) — "
         f"{score['base_team']}'s {base_metric_name} attacks "
         f"{score['opponent']}'s {opponent_metric_name} profile. "
         f"{score['base_team']} {score['base_metric']} percentile: {score['base_strength']}; "
@@ -260,12 +336,196 @@ def format_top_base_team_edges(base_team, opponent, limit: int = 3) -> list[str]
 
     return formatted_scores
 
-def get_score_confidence(score: float) -> str:
+def generate_matchup_summary(base_team, opponent) -> str:
     """
-    Return a confidence label for a matchup score
+    Generate a compact matchup summary from archetypes and top matchup scores
     """
-    if score >= 75:
-        return "High confidence"
-    if score >= 50:
-        return "Medium confidence"
-    return "Low confidence"
+    base_team_name = base_team["TeamName"]
+    opponent_name = opponent["TeamName"]
+
+    base_archetype = identify_team_archetype(base_team)
+    opponent_archetype = identify_team_archetype(opponent)
+
+    top_pressure = get_top_opponent_pressures(base_team, opponent, limit=1)[0]
+    top_edge = get_top_base_team_edges(base_team, opponent, limit=1)[0]
+
+    pressure_metric_name = METRIC_DISPLAY_NAMES[top_pressure["opponent_metric"]]
+    resistance_metric_name = METRIC_DISPLAY_NAMES[top_pressure["base_metric"]]
+
+    edge_metric_name = METRIC_DISPLAY_NAMES[top_edge["base_metric"]]
+    opponent_resistance_name = METRIC_DISPLAY_NAMES[top_edge["opponent_metric"]]
+
+    pressure_type = get_pressure_matchup_type(top_pressure)
+    edge_type = get_edge_matchup_type(top_edge)
+
+    return (
+        f"{base_team_name} enters as a {base_archetype.lower()}, while "
+        f"{opponent_name} profiles as a {opponent_archetype.lower()}. "
+        f"{opponent_name}'s clearest pressure area is {top_pressure['name'].lower()} "
+        f"({top_pressure['pressure_score']}/100, {pressure_type.lower()}), where its "
+        f"{pressure_metric_name} attacks {base_team_name}'s {resistance_metric_name} profile. "
+        f"{base_team_name}'s cleanest counter is its {edge_metric_name} "
+        f"({top_edge['edge_score']}/100, {edge_type.lower()}), which attacks "
+        f"{opponent_name}'s {opponent_resistance_name} profile. "
+        f"The matchup likely hinges on whether {base_team_name} can manage "
+        f"{opponent_name}'s top pressure area while still leaning into its clearest offensive edge."
+    )
+
+def get_pressure_matchup_type(score: dict) -> str:
+    """
+    Describe what kind of opponent pressure matchup this is
+    """
+    opponent_strength = score["opponent_strength"]
+    base_resistance = score["base_resistance"]
+
+    if opponent_strength >= 75 and base_resistance <= 25:
+        return "Clear pressure point"
+
+    if opponent_strength >= 75 and base_resistance >= 75:
+        return "Strength-on-strength"
+
+    if opponent_strength >= 75:
+        return "Opponent strength"
+
+    if base_resistance <= 25:
+        return "Vulnerability watch"
+
+    return "Lower-leverage area"
+
+def get_edge_matchup_type(score: dict) -> str:
+    """
+    Describe what kind of base team edge matchup this is
+    """
+    base_strength = score["base_strength"]
+    opponent_resistance = score["opponent_resistance"]
+
+    if base_strength >= 75 and opponent_resistance <= 25:
+        return "Clear edge"
+
+    if base_strength >= 75 and opponent_resistance >= 75:
+        return "Strength-on-strength"
+
+    if base_strength >= 75:
+        return "Base team strength"
+
+    if opponent_resistance <= 25:
+        return "Opponent vulnerability watch"
+
+    return "Lower-leverage edge"
+
+def score_team_style_signals(team) -> list[dict]:
+    """
+    Score a team's strongest statistical style signals
+    """
+    signals = []
+
+    for signal in TEAM_STYLE_SIGNALS:
+        percentile = get_metric_percentile(
+            team,
+            signal["metric"],
+        )
+
+        signals.append(
+            {
+                "team": team["TeamName"],
+                "name": signal["name"],
+                "metric": signal["metric"],
+                "description": signal["description"],
+                "percentile": percentile,
+            }
+        )
+
+    signals = sorted(
+        signals,
+        key=lambda signal: signal["percentile"],
+        reverse=True,
+    )
+
+    return signals
+
+def identify_team_archetype(team) -> str:
+    """
+    Identify a team's broad statistical archetype from composite identity scores
+    """
+    axes = score_identity_axes(team)
+
+    top_axis = axes[0]
+    second_axis = axes[1]
+
+    top_name = top_axis["name"]
+    second_name = second_axis["name"]
+
+    top_score = top_axis["score"]
+    second_score = second_axis["score"]
+
+    top_two_names = {top_name, second_name}
+
+    if top_score < 50:
+        return "Low-signal statistical profile"
+
+    if top_score >= 85 and second_score >= 80:
+        if {"Offensive firepower", "Defensive discipline"}.issubset(top_two_names):
+            return "Two-way efficiency team"
+
+        if {"Defensive disruption", "Possession control"}.issubset(top_two_names):
+            return "Possession-control pressure team"
+
+        if {"Defensive discipline", "Paint and free throw pressure"}.issubset(top_two_names):
+            return "Physical defensive discipline team"
+
+        if {"Offensive firepower", "Perimeter volume"}.issubset(top_two_names):
+            return "High-powered perimeter offense"
+
+    if top_score >= 75:
+        if top_name == "Offensive firepower":
+            return "Offensive firepower team"
+
+        if top_name == "Possession control":
+            return "Possession-control team"
+
+        if top_name == "Defensive disruption":
+            return "Defensive disruption team"
+
+        if top_name == "Defensive discipline":
+            return "Defensive discipline team"
+
+        if top_name == "Perimeter volume":
+            return "Perimeter-volume offense"
+
+        if top_name == "Paint and free throw pressure":
+            return "Physical paint-pressure team"
+
+    return "Mixed statistical profile"
+
+def score_identity_axes(team) -> list[dict]:
+    """
+    Score a team's broader statistical identity areas
+    """
+    axes = []
+
+    for axis in IDENTITY_AXES:
+        percentiles = []
+
+        for metric in axis["metrics"]:
+            percentile = get_metric_percentile(team, metric)
+            percentiles.append(percentile)
+
+        axis_score = sum(percentiles) / len(percentiles)
+
+        axes.append(
+            {
+                "team": team["TeamName"],
+                "name": axis["name"],
+                "description": axis["description"],
+                "metrics": axis["metrics"],
+                "score": round(axis_score, 1),
+            }
+        )
+
+    axes = sorted(
+        axes,
+        key=lambda axis: axis["score"],
+        reverse=True,
+    )
+
+    return axes

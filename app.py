@@ -73,6 +73,11 @@ st.divider()
 
 st.header(f"{report['base_team']} vs. {report['opponent']}")
 
+st.write(f"**{report['base_team']} identity:** {report['base_team_archetype']}")
+st.write(f"**{report['opponent']} identity:** {report['opponent_archetype']}")
+st.subheader("Scout summary")
+st.write(report["matchup_summary"])
+
 write_bullet_section(
     "Top opponent pressure areas",
     report["priority_opponent_pressures"],

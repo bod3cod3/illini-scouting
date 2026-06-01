@@ -4,7 +4,12 @@ SEASON_YEAR = 2026
 
 from load_data import load_torvik_four_factors, get_team
 from metrics import add_percentile_columns
-from matchup_engine import format_top_opponent_pressures, format_top_base_team_edges
+from matchup_engine import (
+    format_top_opponent_pressures,
+    format_top_base_team_edges,
+    generate_matchup_summary,
+    identify_team_archetype,
+)
 from scouting import generate_team_report
 
 def get_base_team_advantages(base_team, opponent) -> list[str]:
@@ -173,6 +178,9 @@ def generate_matchup_report(base_team, opponent) -> dict:
     report = {
         "base_team": base_team_report["team"],
         "opponent": opponent_report["team"],
+        "base_team_archetype": identify_team_archetype(base_team),
+        "opponent_archetype": identify_team_archetype(opponent),
+        "matchup_summary": generate_matchup_summary(base_team, opponent),
         "base_team_strengths": base_team_report["strengths"],
         "opponent_strengths": opponent_report["strengths"],
         "opponent_weaknesses": opponent_report["weaknesses"],
@@ -221,6 +229,10 @@ if __name__ == "__main__":
     print("Matchup loaded successfully.")
     print("Base team:", report["base_team"])
     print("Opponent:", report["opponent"])
+    print("Base team identity:", report["base_team_archetype"])
+    print("Opponent identity:", report["opponent_archetype"])
+    print("\nScout summary:")
+    print(report["matchup_summary"])
 
     print_section(
         f"{report['base_team']} strengths:",
