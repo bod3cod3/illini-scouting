@@ -4,33 +4,6 @@ import pandas as pd
 from load_data import load_torvik_four_factors, get_team
 
 
-def classify_rank(rank: int) -> str:
-    """
-    Convert a national rank into a scouting label
-
-    Lower ranks are better
-    """
-    if rank <= 25:
-        return "Elite"
-    elif rank <= 75:
-        return "Strong"
-    elif rank <= 150:
-        return "Average"
-    elif rank <= 205:
-        return "Weak"
-    else:
-        return "Major weakness"
-    
-
-def describe_metric(metric_name: str, value: float, rank: int) -> str:
-    """
-    Create a short description for a single metric
-    """
-    label = classify_rank(rank)
-
-    return f"{metric_name}: {value:.1f} ({label}, rank {rank})"
-
-
 def get_team_strengths(team_ff: pd.Series) -> list[str]:
     """
     Identify major team strengths from Four Factors rankings.
