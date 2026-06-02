@@ -1,4 +1,6 @@
+from html import escape
 from pathlib import Path
+from textwrap import dedent
 import sys
 
 import pandas as pd
@@ -13,6 +15,7 @@ SEASON_YEAR = 2026
 from load_data import load_torvik_four_factors, get_team
 from matchup import generate_matchup_report
 from metrics import add_percentile_columns
+from team_colors import get_team_colors
 
 st.set_page_config(
     page_title="Illini Opponent Prep",
@@ -139,6 +142,103 @@ def write_supporting_stats_table(rows: list[dict]) -> None:
         },
     )
 
+def apply_team_theme(team_colors: dict) -> None:
+    """
+    Apply subtle page-wide accent colors based on the selected base team
+    """
+    primary = team_colors["primary"]
+    secondary = team_colors["secondary"]
+
+    st.markdown(
+        f"""
+<style>
+    div[data-testid="stAppViewContainer"] {{
+        background:
+            radial-gradient(circle at top left, {primary}24 0, transparent 28rem),
+            radial-gradient(circle at top right, {secondary}18 0, transparent 24rem),
+            #0E1117;
+    }}
+
+    h1 {{
+        border-bottom: none !important;
+        line-height: 1.08 !important;
+        text-decoration-line: underline;
+        text-decoration-color: {primary};
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.14em;
+    }}
+
+    h2, h3 {{
+        border-left: none !important;
+        border-bottom: none !important;
+        padding-left: 0 !important;
+        padding-bottom: 0 !important;
+        margin-top: 1.5rem;
+        display: inline-block;
+        line-height: 1.08 !important;
+        text-decoration-line: underline;
+        text-decoration-color: {primary};
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.14em;
+    }}
+
+    h2 {{
+        line-height: 1.25;
+    }}
+
+    h3 {{
+        line-height: 1.3;
+    }}
+
+    hr {{
+        border-top: 1px solid {primary};
+        opacity: 0.55;
+    }}
+
+    div[data-testid="stExpander"] {{
+        border: 1px solid {primary}66;
+        border-radius: 0.5rem;
+    }}
+
+    div[data-baseweb="select"] > div {{
+        border-color: {primary}99;
+    }}
+
+    div[data-testid="stDataFrame"] {{
+        border: 1px solid {primary}55;
+        border-radius: 0.5rem;
+    }}
+
+    a {{
+        color: {secondary};
+    }}
+</style>
+        """.strip(),
+        unsafe_allow_html=True,
+    )
+
+def write_matchup_header(report: dict, team_colors: dict) -> None:
+    """
+    Display matchup header using the base team's colors
+    """
+    primary = team_colors["primary"]
+    secondary = team_colors["secondary"]
+
+    st.markdown(
+        f"<div style='height: 6px; border-radius: 999px; "
+        f"background: linear-gradient(90deg, {primary} 0%, {primary} 50%, "
+        f"{secondary} 50%, {secondary} 100%);'></div>",
+        unsafe_allow_html=True,
+    )
+
+    st.header(f"{report['base_team']} vs. {report['opponent']}")
+
+    st.caption(
+        f"{report['base_team']} identity: {report['base_team_archetype']} | "
+        f"{report['opponent']} identity: {report['opponent_archetype']}"
+    )
+
+    st.caption(f"Base-team perspective: {report['base_team']}")
 
 four_factors = load_data()
 
@@ -166,10 +266,10 @@ report = generate_matchup_report(base_team, opponent)
 
 st.divider()
 
-st.header(f"{report['base_team']} vs. {report['opponent']}")
+base_team_colors = get_team_colors(report["base_team"])
 
-st.write(f"**{report['base_team']} identity:** {report['base_team_archetype']}")
-st.write(f"**{report['opponent']} identity:** {report['opponent_archetype']}")
+apply_team_theme(base_team_colors)
+write_matchup_header(report, base_team_colors)
 
 st.subheader("Scout summary")
 st.write(report["matchup_summary"])

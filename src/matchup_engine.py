@@ -154,6 +154,20 @@ def possessive_name(name: str) -> str:
 
     return f"{name}'s"
 
+def with_indefinite_article(text: str) -> str:
+    """
+    Add a or an before a short matchup label
+    """
+    if text == "":
+        return text
+
+    first_letter = text[0].lower()
+
+    if first_letter in {"a", "e", "i", "o", "u"}:
+        return f"an {text}"
+
+    return f"a {text}"
+
 def calculate_pressure_score(opponent_strength: float, base_resistance: float) -> float:
     """
     Calculate how much pressure an opponent puts on the base team in one matchup area
@@ -259,11 +273,10 @@ def format_pressure_score(score: dict) -> str:
     base_metric_name = METRIC_DISPLAY_NAMES[score["base_metric"]]
 
     return (
-        f"{score['name']}: {score['base_favorability_score']}/100 base favorability ({get_pressure_matchup_type(score)}). "
-        f"{possessive_name(score['opponent'])} {opponent_metric_name} attacks "
-        f"{possessive_name(score['base_team'])} {base_metric_name} profile. "
-        f"{score['opponent']} {score['opponent_metric']} percentile: {score['opponent_strength']}; "
-        f"{score['base_team']} {score['base_metric']} percentile: {score['base_resistance']}."
+    f"{score['name']}: {score['base_favorability_score']}/100 base favorability "
+    f"({get_pressure_matchup_type(score)}). "
+    f"{possessive_name(score['opponent'])} {opponent_metric_name} tests "
+    f"{possessive_name(score['base_team'])} {base_metric_name} profile."
     )
 
 def format_top_opponent_pressures(base_team, opponent, limit: int = 3) -> list[str]:
@@ -352,11 +365,10 @@ def format_edge_score(score: dict) -> str:
     opponent_metric_name = METRIC_DISPLAY_NAMES[score["opponent_metric"]]
 
     return (
-        f"{score['name']}: {score['base_favorability_score']}/100 base favorability ({get_edge_matchup_type(score)}). "
-        f"{possessive_name(score['base_team'])} {base_metric_name} attacks "
-        f"{possessive_name(score['opponent'])} {opponent_metric_name} profile. "
-        f"{score['base_team']} {score['base_metric']} percentile: {score['base_strength']}; "
-        f"{score['opponent']} {score['opponent_metric']} percentile: {score['opponent_resistance']}."
+    f"{score['name']}: {score['base_favorability_score']}/100 base favorability "
+    f"({get_edge_matchup_type(score)}). "
+    f"{possessive_name(score['base_team'])} {base_metric_name} can attack "
+    f"{possessive_name(score['opponent'])} {opponent_metric_name} profile."
     )
 
 
@@ -405,7 +417,7 @@ def generate_matchup_summary(base_team, opponent) -> str:
         f"({top_edge['base_favorability_score']}/100 base favorability, {edge_type.lower()}), which attacks "
         f"{possessive_name(opponent_name)} {opponent_resistance_name} profile. "
         f"The matchup likely hinges on whether {base_team_name} can manage "
-        f"{opponent_name}'s top pressure area while still leaning into its clearest offensive edge."
+        f"{possessive_name(opponent_name)} top pressure area while still leaning into its clearest offensive edge."
     )
 
 def get_pressure_matchup_type(score: dict) -> str:
@@ -575,35 +587,37 @@ def get_key_from_opponent_pressure(score: dict) -> str:
     opponent = score["opponent"]
     base_team_possessive = possessive_name(base_team)
     opponent_possessive = possessive_name(opponent)
-    matchup_type = get_pressure_matchup_type(score).lower()
+    matchup_type = with_indefinite_article(
+        get_pressure_matchup_type(score).lower()
+    )
 
     if score["name"] == "Defensive glass pressure":
         return (
-            f"Finish defensive possessions: {opponent_possessive} offensive rebounding is a "
+            f"Finish defensive possessions: {opponent_possessive} offensive rebounding is "
             f"{matchup_type}, so {base_team} needs five-man box-outs before leaking out."
         )
 
     if score["name"] == "Opponent three-point volume pressure":
         return (
-            f"Control the arc: {opponent_possessive} three-point volume is a {matchup_type}, "
+            f"Control the arc: {opponent_possessive} three-point volume is {matchup_type}, "
             f"so {base_team} needs disciplined closeouts without overhelping."
         )
 
     if score["name"] == "Opponent shooting efficiency pressure":
         return (
-            f"Make first shots difficult: {opponent_possessive} shooting efficiency is a "
+            f"Make first shots difficult: {opponent_possessive} shooting efficiency is "
             f"{matchup_type}, so {base_team} cannot give up clean early-clock looks."
         )
 
     if score["name"] == "Opponent turnover pressure":
         return (
-            f"Protect possessions: {opponent_possessive} turnover creation is a {matchup_type}, "
+            f"Protect possessions: {opponent_possessive} turnover creation is {matchup_type}, "
             f"so {base_team} needs strong spacing, simple outlets, and limited live-ball mistakes."
         )
 
     if score["name"] == "Opponent free throw pressure":
         return (
-            f"Defend without fouling: {opponent_possessive} free throw pressure is a "
+            f"Defend without fouling: {opponent_possessive} free throw pressure is "
             f"{matchup_type}, so {base_team} needs verticality and disciplined help rotations."
         )
 
@@ -621,35 +635,37 @@ def get_key_from_base_team_edge(score: dict) -> str:
     opponent = score["opponent"]
     base_team_possessive = possessive_name(base_team)
     opponent_possessive = possessive_name(opponent)
-    matchup_type = get_edge_matchup_type(score).lower()
+    matchup_type = with_indefinite_article(
+        get_edge_matchup_type(score).lower()
+    )
 
     if score["name"] == "Offensive glass edge":
         return (
-            f"Attack the offensive glass: {base_team_possessive} offensive rebounding is a "
+            f"Attack the offensive glass: {base_team_possessive} offensive rebounding is "
             f"{matchup_type}, so second-chance points can be a major source of value."
         )
 
     if score["name"] == "Three-point volume edge":
         return (
-            f"Lean into quality threes: {base_team_possessive} three-point volume is a "
+            f"Lean into quality threes: {base_team_possessive} three-point volume is "
             f"{matchup_type}, so clean catch-and-shoot looks should be emphasized."
         )
 
     if score["name"] == "Shooting efficiency edge":
         return (
-            f"Create efficient looks: {base_team_possessive} shooting efficiency is a "
+            f"Create efficient looks: {base_team_possessive} shooting efficiency is "
             f"{matchup_type}, so pace, spacing, and ball movement should drive the offense."
         )
 
     if score["name"] == "Ball security edge":
         return (
-            f"Make {opponent} defend full possessions: {base_team_possessive} ball security is a "
+            f"Make {opponent} defend full possessions: {base_team_possessive} ball security is "
             f"{matchup_type}, so avoiding empty possessions can tilt the possession math."
         )
 
     if score["name"] == "Free throw pressure edge":
         return (
-            f"Pressure the rim: {base_team_possessive} free throw pressure is a "
+            f"Pressure the rim: {base_team_possessive} free throw pressure is "
             f"{matchup_type}, so attacking closeouts and drawing contact can create efficient points."
         )
 
