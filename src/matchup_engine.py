@@ -145,6 +145,15 @@ IDENTITY_AXES = [
     },
 ]
 
+def possessive_name(name: str) -> str:
+    """
+    Return a grammatically correct possessive team name
+    """
+    if name.endswith("s"):
+        return f"{name}'"
+
+    return f"{name}'s"
+
 def calculate_pressure_score(opponent_strength: float, base_resistance: float) -> float:
     """
     Calculate how much pressure an opponent puts on the base team in one matchup area
@@ -163,6 +172,22 @@ def calculate_pressure_score(opponent_strength: float, base_resistance: float) -
     pressure_score = (opponent_strength + base_vulnerability) / 2
 
     return round(pressure_score, 1)
+
+def calculate_base_favorability_score(
+    base_percentile: float,
+    opponent_percentile: float,
+) -> float:
+    """
+    Calculate matchup favorability from the base team's perspective
+
+    Higher means better for the base team.
+    Lower means worse for the base team.
+    """
+    opponent_vulnerability = 100 - opponent_percentile
+
+    favorability_score = (base_percentile + opponent_vulnerability) / 2
+
+    return round(favorability_score, 1)
 
 def score_matchup_area(base_team, opponent, area: dict) -> dict:
     """
@@ -183,6 +208,11 @@ def score_matchup_area(base_team, opponent, area: dict) -> dict:
         base_resistance,
     )
 
+    base_favorability_score = calculate_base_favorability_score(
+    base_resistance,
+    opponent_strength,
+    )
+
     return {
         "name": area["name"],
         "base_team": base_team["TeamName"],
@@ -192,6 +222,7 @@ def score_matchup_area(base_team, opponent, area: dict) -> dict:
         "opponent_strength": opponent_strength,
         "base_resistance": base_resistance,
         "pressure_score": pressure_score,
+        "base_favorability_score": base_favorability_score,
     }
 
 def score_opponent_pressures(base_team, opponent) -> list[dict]:
@@ -228,9 +259,9 @@ def format_pressure_score(score: dict) -> str:
     base_metric_name = METRIC_DISPLAY_NAMES[score["base_metric"]]
 
     return (
-        f"{score['name']}: {score['pressure_score']}/100 ({get_pressure_matchup_type(score)}). "
-        f"{score['opponent']}'s {opponent_metric_name} attacks "
-        f"{score['base_team']}'s {base_metric_name} profile. "
+        f"{score['name']}: {score['base_favorability_score']}/100 base favorability ({get_pressure_matchup_type(score)}). "
+        f"{possessive_name(score['opponent'])} {opponent_metric_name} attacks "
+        f"{possessive_name(score['base_team'])} {base_metric_name} profile. "
         f"{score['opponent']} {score['opponent_metric']} percentile: {score['opponent_strength']}; "
         f"{score['base_team']} {score['base_metric']} percentile: {score['base_resistance']}."
     )
@@ -267,6 +298,11 @@ def score_base_edge_area(base_team, opponent, area: dict) -> dict:
         opponent_resistance,
     )
 
+    base_favorability_score = calculate_base_favorability_score(
+    base_strength,
+    opponent_resistance,
+    )
+
     return {
         "name": area["name"],
         "base_team": base_team["TeamName"],
@@ -276,6 +312,7 @@ def score_base_edge_area(base_team, opponent, area: dict) -> dict:
         "base_strength": base_strength,
         "opponent_resistance": opponent_resistance,
         "edge_score": edge_score,
+        "base_favorability_score": base_favorability_score,
     }
 
 
@@ -315,9 +352,9 @@ def format_edge_score(score: dict) -> str:
     opponent_metric_name = METRIC_DISPLAY_NAMES[score["opponent_metric"]]
 
     return (
-        f"{score['name']}: {score['edge_score']}/100 ({get_edge_matchup_type(score)}). "
-        f"{score['base_team']}'s {base_metric_name} attacks "
-        f"{score['opponent']}'s {opponent_metric_name} profile. "
+        f"{score['name']}: {score['base_favorability_score']}/100 base favorability ({get_edge_matchup_type(score)}). "
+        f"{possessive_name(score['base_team'])} {base_metric_name} attacks "
+        f"{possessive_name(score['opponent'])} {opponent_metric_name} profile. "
         f"{score['base_team']} {score['base_metric']} percentile: {score['base_strength']}; "
         f"{score['opponent']} {score['opponent_metric']} percentile: {score['opponent_resistance']}."
     )
@@ -361,12 +398,12 @@ def generate_matchup_summary(base_team, opponent) -> str:
     return (
         f"{base_team_name} enters as a {base_archetype.lower()}, while "
         f"{opponent_name} profiles as a {opponent_archetype.lower()}. "
-        f"{opponent_name}'s clearest pressure area is {top_pressure['name'].lower()} "
-        f"({top_pressure['pressure_score']}/100, {pressure_type.lower()}), where its "
-        f"{pressure_metric_name} attacks {base_team_name}'s {resistance_metric_name} profile. "
-        f"{base_team_name}'s cleanest counter is its {edge_metric_name} "
-        f"({top_edge['edge_score']}/100, {edge_type.lower()}), which attacks "
-        f"{opponent_name}'s {opponent_resistance_name} profile. "
+        f"{possessive_name(opponent_name)} clearest pressure area is {top_pressure['name'].lower()} "
+        f"({top_pressure['base_favorability_score']}/100 base favorability, {pressure_type.lower()}), where its "
+        f"{pressure_metric_name} attacks {possessive_name(base_team_name)} {resistance_metric_name} profile. "
+        f"{possessive_name(base_team_name)} cleanest counter is its {edge_metric_name} "
+        f"({top_edge['base_favorability_score']}/100 base favorability, {edge_type.lower()}), which attacks "
+        f"{possessive_name(opponent_name)} {opponent_resistance_name} profile. "
         f"The matchup likely hinges on whether {base_team_name} can manage "
         f"{opponent_name}'s top pressure area while still leaning into its clearest offensive edge."
     )
@@ -406,7 +443,7 @@ def get_edge_matchup_type(score: dict) -> str:
         return "Strength-on-strength"
 
     if base_strength >= 75:
-        return "Base team strength"
+        return "Reliable team edge"
 
     if opponent_resistance <= 25:
         return "Opponent vulnerability watch"
@@ -460,9 +497,6 @@ def identify_team_archetype(team) -> str:
 
     top_two_names = {top_name, second_name}
 
-    if top_score < 50:
-        return "Low-signal statistical profile"
-
     if top_score >= 85 and second_score >= 80:
         if {"Offensive firepower", "Defensive discipline"}.issubset(top_two_names):
             return "Two-way efficiency team"
@@ -495,7 +529,10 @@ def identify_team_archetype(team) -> str:
         if top_name == "Paint and free throw pressure":
             return "Physical paint-pressure team"
 
-    return "Mixed statistical profile"
+    if top_score >= 60:
+        return f"{top_name} lean"
+
+    return f"Limited profile with {top_name.lower()} lean"
 
 def score_identity_axes(team) -> list[dict]:
     """
@@ -536,35 +573,37 @@ def get_key_from_opponent_pressure(score: dict) -> str:
     """
     base_team = score["base_team"]
     opponent = score["opponent"]
+    base_team_possessive = possessive_name(base_team)
+    opponent_possessive = possessive_name(opponent)
     matchup_type = get_pressure_matchup_type(score).lower()
 
     if score["name"] == "Defensive glass pressure":
         return (
-            f"Finish defensive possessions: {opponent}'s offensive rebounding is a "
+            f"Finish defensive possessions: {opponent_possessive} offensive rebounding is a "
             f"{matchup_type}, so {base_team} needs five-man box-outs before leaking out."
         )
 
     if score["name"] == "Opponent three-point volume pressure":
         return (
-            f"Control the arc: {opponent}'s three-point volume is a {matchup_type}, "
+            f"Control the arc: {opponent_possessive} three-point volume is a {matchup_type}, "
             f"so {base_team} needs disciplined closeouts without overhelping."
         )
 
     if score["name"] == "Opponent shooting efficiency pressure":
         return (
-            f"Make first shots difficult: {opponent}'s shooting efficiency is a "
+            f"Make first shots difficult: {opponent_possessive} shooting efficiency is a "
             f"{matchup_type}, so {base_team} cannot give up clean early-clock looks."
         )
 
     if score["name"] == "Opponent turnover pressure":
         return (
-            f"Protect possessions: {opponent}'s turnover creation is a {matchup_type}, "
+            f"Protect possessions: {opponent_possessive} turnover creation is a {matchup_type}, "
             f"so {base_team} needs strong spacing, simple outlets, and limited live-ball mistakes."
         )
 
     if score["name"] == "Opponent free throw pressure":
         return (
-            f"Defend without fouling: {opponent}'s free throw pressure is a "
+            f"Defend without fouling: {opponent_possessive} free throw pressure is a "
             f"{matchup_type}, so {base_team} needs verticality and disciplined help rotations."
         )
 
@@ -580,35 +619,37 @@ def get_key_from_base_team_edge(score: dict) -> str:
     """
     base_team = score["base_team"]
     opponent = score["opponent"]
+    base_team_possessive = possessive_name(base_team)
+    opponent_possessive = possessive_name(opponent)
     matchup_type = get_edge_matchup_type(score).lower()
 
     if score["name"] == "Offensive glass edge":
         return (
-            f"Attack the offensive glass: {base_team}'s offensive rebounding is a "
+            f"Attack the offensive glass: {base_team_possessive} offensive rebounding is a "
             f"{matchup_type}, so second-chance points can be a major source of value."
         )
 
     if score["name"] == "Three-point volume edge":
         return (
-            f"Lean into quality threes: {base_team}'s three-point volume is a "
+            f"Lean into quality threes: {base_team_possessive} three-point volume is a "
             f"{matchup_type}, so clean catch-and-shoot looks should be emphasized."
         )
 
     if score["name"] == "Shooting efficiency edge":
         return (
-            f"Create efficient looks: {base_team}'s shooting efficiency is a "
+            f"Create efficient looks: {base_team_possessive} shooting efficiency is a "
             f"{matchup_type}, so pace, spacing, and ball movement should drive the offense."
         )
 
     if score["name"] == "Ball security edge":
         return (
-            f"Make {opponent} defend full possessions: {base_team}'s ball security is a "
+            f"Make {opponent} defend full possessions: {base_team_possessive} ball security is a "
             f"{matchup_type}, so avoiding empty possessions can tilt the possession math."
         )
 
     if score["name"] == "Free throw pressure edge":
         return (
-            f"Pressure the rim: {base_team}'s free throw pressure is a "
+            f"Pressure the rim: {base_team_possessive} free throw pressure is a "
             f"{matchup_type}, so attacking closeouts and drawing contact can create efficient points."
         )
 
@@ -637,27 +678,32 @@ def generate_engine_keys_to_victory(base_team, opponent) -> list[str]:
 
 def build_matchup_evidence_row(
     area: str,
-    side: str,
+    direction: str,
     matchup_type: str,
-    score: float,
-    team: str,
-    metric_abbreviation: str,
-    percentile: float,
-    metric_role: str,
+    base_favorability_score: float,
+    base_team: str,
+    base_metric: str,
+    base_percentile: float,
+    opponent: str,
+    opponent_metric: str,
+    opponent_percentile: float,
 ) -> dict:
     """
     Build one supporting-stat row for a matchup area
     """
     return {
         "area": area,
-        "side": side,
+        "direction": direction,
         "matchup_type": matchup_type,
-        "score": score,
-        "team": team,
-        "metric_display_name": METRIC_DISPLAY_NAMES[metric_abbreviation],
-        "metric_abbreviation": metric_abbreviation,
-        "percentile": percentile,
-        "metric_role": metric_role,
+        "base_favorability_score": base_favorability_score,
+        "base_team": base_team,
+        "base_metric_display_name": METRIC_DISPLAY_NAMES[base_metric],
+        "base_metric_abbreviation": base_metric,
+        "base_percentile": base_percentile,
+        "opponent": opponent,
+        "opponent_metric_display_name": METRIC_DISPLAY_NAMES[opponent_metric],
+        "opponent_metric_abbreviation": opponent_metric,
+        "opponent_percentile": opponent_percentile,
     }
 
 
@@ -668,10 +714,10 @@ def get_matchup_evidence_rows(
     edge_limit: int = 3,
 ) -> list[dict]:
     """
-    Return supporting-stat rows for the top pressure and edge areas
+    Return one supporting-stat row per top pressure or edge area
 
-    Each matchup area creates two rows:
-    one for the attacking team metric and one for the resistance metric
+    The table always keeps the base team on the left
+    and the opponent on the right.
     """
     rows = []
 
@@ -687,26 +733,15 @@ def get_matchup_evidence_rows(
         rows.append(
             build_matchup_evidence_row(
                 area=pressure["name"],
-                side="Opponent pressure",
+                direction="Opponent pressure",
                 matchup_type=matchup_type,
-                score=pressure["pressure_score"],
-                team=pressure["opponent"],
-                metric_abbreviation=pressure["opponent_metric"],
-                percentile=pressure["opponent_strength"],
-                metric_role="Attack",
-            )
-        )
-
-        rows.append(
-            build_matchup_evidence_row(
-                area=pressure["name"],
-                side="Opponent pressure",
-                matchup_type=matchup_type,
-                score=pressure["pressure_score"],
-                team=pressure["base_team"],
-                metric_abbreviation=pressure["base_metric"],
-                percentile=pressure["base_resistance"],
-                metric_role="Resistance",
+                base_favorability_score=pressure["base_favorability_score"],
+                base_team=pressure["base_team"],
+                base_metric=pressure["base_metric"],
+                base_percentile=pressure["base_resistance"],
+                opponent=pressure["opponent"],
+                opponent_metric=pressure["opponent_metric"],
+                opponent_percentile=pressure["opponent_strength"],
             )
         )
 
@@ -722,26 +757,15 @@ def get_matchup_evidence_rows(
         rows.append(
             build_matchup_evidence_row(
                 area=edge["name"],
-                side="Base team edge",
+                direction="Base team edge",
                 matchup_type=matchup_type,
-                score=edge["edge_score"],
-                team=edge["base_team"],
-                metric_abbreviation=edge["base_metric"],
-                percentile=edge["base_strength"],
-                metric_role="Attack",
-            )
-        )
-
-        rows.append(
-            build_matchup_evidence_row(
-                area=edge["name"],
-                side="Base team edge",
-                matchup_type=matchup_type,
-                score=edge["edge_score"],
-                team=edge["opponent"],
-                metric_abbreviation=edge["opponent_metric"],
-                percentile=edge["opponent_resistance"],
-                metric_role="Resistance",
+                base_favorability_score=edge["base_favorability_score"],
+                base_team=edge["base_team"],
+                base_metric=edge["base_metric"],
+                base_percentile=edge["base_strength"],
+                opponent=edge["opponent"],
+                opponent_metric=edge["opponent_metric"],
+                opponent_percentile=edge["opponent_resistance"],
             )
         )
 
