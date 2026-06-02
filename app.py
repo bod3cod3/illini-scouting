@@ -4,6 +4,7 @@ from textwrap import dedent
 import sys
 
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -142,6 +143,77 @@ def write_supporting_stats_table(rows: list[dict]) -> None:
         },
     )
 
+def write_matchup_favorability_chart(rows: list[dict], team_colors: dict) -> None:
+    """
+    Display a vertical bar chart of base favorability by matchup area
+    """
+    st.subheader("Matchup favorability profile")
+    st.caption("Higher bars are better for the selected base team.")
+
+    if len(rows) == 0:
+        st.write("No matchup favorability data available.")
+        return
+
+    chart_data = pd.DataFrame(rows)
+    chart_data = chart_data.sort_values(
+        by="base_favorability_score",
+        ascending=False,
+    )
+
+    primary = team_colors["primary"]
+    secondary = team_colors["secondary"]
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            x=chart_data["area"],
+            y=chart_data["base_favorability_score"],
+            marker={
+                "color": primary,
+                "line": {
+                    "color": secondary,
+                    "width": 1.5,
+                },
+            },
+            text=chart_data["base_favorability_score"],
+            texttemplate="%{text:.1f}",
+            textposition="outside",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Base favorability: %{y:.1f}/100"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.update_layout(
+        height=430,
+        margin={
+            "l": 20,
+            "r": 20,
+            "t": 20,
+            "b": 90,
+        },
+        yaxis={
+            "range": [0, 105],
+            "title": "Base favorability",
+            "gridcolor": "rgba(255, 255, 255, 0.12)",
+        },
+        xaxis={
+            "title": "",
+            "tickangle": -30,
+        },
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        font={
+            "color": "white",
+        },
+        showlegend=False,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
 def apply_team_theme(team_colors: dict) -> None:
     """
     Apply subtle page-wide accent colors based on the selected base team
@@ -274,10 +346,11 @@ write_matchup_header(report, base_team_colors)
 st.subheader("Scout summary")
 st.write(report["matchup_summary"])
 
+write_matchup_favorability_chart(report["supporting_stats"], base_team_colors)
+
 write_matchup_score_explanation()
 
 write_supporting_stats_table(report["supporting_stats"])
-
 st.divider()
 
 left_col, right_col = st.columns(2)
