@@ -1,4 +1,10 @@
+from pathlib import Path
+
 import pandas as pd
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = ROOT_DIR / "data"
 
 def load_torvik_team_results(year: int = 2026) -> pd.DataFrame:
     """
@@ -49,9 +55,14 @@ def load_torvik_four_factors(year: int = 2026) -> pd.DataFrame:
     Returns:
         A cleaned pandas DataFrame with team names and Four Factors data
     """
-    url = f"https://barttorvik.com/{year}_fffinal.csv"
+    local_path = DATA_DIR / f"{year}_fffinal.csv"
 
-    raw = pd.read_csv(url)
+    if local_path.exists():
+        raw = pd.read_csv(local_path)
+    else:
+        url = f"https://barttorvik.com/{year}_fffinal.csv"
+        raw = pd.read_csv(url)
+
     raw = raw.reset_index()
 
     clean = pd.DataFrame()
