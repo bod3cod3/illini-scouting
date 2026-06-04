@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a Python and Streamlit dashboard built to help coaching staff evaluate college basketball opponents before games. The app uses BartTorvik Four Factors data to compare a selected base team against an opponent and identify certain matchup areas that favor or threaten the base team.
+This project is a Python and Streamlit dashboard built to help coaching staff evaluate college basketball opponents before games. The app uses Bart Torvik Four Factors data to compare a selected base team against an opponent and identify certain matchup areas that favor or threaten the base team.
 
 Built with Python, Streamlit, pandas, and Plotly.
 
@@ -20,7 +20,7 @@ The goal of this project is to help coaching staff or analysts quickly understan
 
 ## Key Features
 
-- Select any base team and opponent from the BartTorvik dataset
+- Select any base team and opponent from the Bart Torvik dataset
 - Generate a one-paragraph matchup summary
 - Identify top opponent pressure areas
 - Identify top base-team edge areas
@@ -45,7 +45,7 @@ The area label describes the direction of the matchup, while the base favorabili
 
 ## Data Source
 
-This project uses public BartTorvik Four Factors data for the 2025-2026 men's college basketball season. 
+This project uses public Bart Torvik Four Factors data for the 2025-2026 men's college basketball season. 
 
 Once loaded, the raw data is cleaned in `src/load_data.py` and converted to percentile-based metrics in `src/metrics.py`. 
 
