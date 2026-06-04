@@ -315,7 +315,7 @@ def write_matchup_header(report: dict, team_colors: dict) -> None:
 four_factors = load_data()
 
 st.title("Men's Basketball Opponent Prep")
-st.caption("Opponent scouting dashboard using BartTorvik Four Factors data")
+st.caption("Opponent scouting dashboard using Bart Torvik Four Factors data")
 
 team_names = sorted(four_factors["TeamName"].dropna().unique())
 

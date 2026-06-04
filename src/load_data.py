@@ -8,7 +8,7 @@ DATA_DIR = ROOT_DIR / "data"
 
 def load_torvik_team_results(year: int = 2026) -> pd.DataFrame:
     """
-    Load team-level BartTorvik data for a given college basketball season
+    Load team-level Bart Torvik data for a given college basketball season
 
     Params:
         year: the season year (2026 means 2025-2026)
@@ -47,7 +47,7 @@ def get_team(df: pd.DataFrame, team_name: str, team_column: str) -> pd.Series:
 
 def load_torvik_four_factors(year: int = 2026) -> pd.DataFrame:
     """
-    Load and clean BartTorvik Four Factors data for a given college basketball season.
+    Load and clean Bart Torvik Four Factors data for a given college basketball season.
 
     Params:
         year: The season year (2026 means 2025-2026)
